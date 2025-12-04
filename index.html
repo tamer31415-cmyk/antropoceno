@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>???</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background-color: #000;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            cursor: crosshair;
+        }
+        
+        .wave-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+        
+        .center-point {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 8px currentColor;
+            z-index: 10;
+        }
+        
+        .wave {
+            position: absolute;
+            border-radius: 50%;
+            border: 2px solid;
+            transform: translate(-50%, -50%);
+            animation: ripple 2s ease-out forwards;
+            pointer-events: none;
+        }
+        
+        .mystery-image-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #000;
+            z-index: 1;
+            opacity: 0;
+            animation: containerAppear 0.5s forwards, containerDisappear 0.5s forwards 6.5s;
+            pointer-events: none;
+        }
+        
+        .mystery-image {
+            height: 100vh;
+            width: auto;
+            max-width: 100%;
+            object-fit: contain;
+            opacity: 0;
+            animation: imageAppear 0.5s forwards 0.1s, imageDisappear 0.5s forwards 6.4s;
+        }
+        
+        @keyframes ripple {
+            0% {
+                width: 0;
+                height: 0;
+                opacity: 0.9;
+            }
+            100% {
+                width: 400px;
+                height: 400px;
+                opacity: 0;
+                border-width: 1px;
+            }
+        }
+        
+        @keyframes containerAppear {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        @keyframes containerDisappear {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
+            }
+        }
+        
+        @keyframes imageAppear {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        @keyframes imageDisappear {
+            from {
+                opacity: 1;
+                transform: scale(1);
+            }
+            to {
+                opacity: 0;
+                transform: scale(1.05);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="wave-container" id="waveContainer"></div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const waveContainer = document.getElementById('waveContainer');
+            
+            // Variables para el sistema de probabilidad
+            let clickCount = 0;
+            let probability = 0;
+            let isImageActive = false;
+            
+            // 10 colores distintos para elegir aleatoriamente
+            const colors = [
+                '#4af',      // Azul claro
+                '#f4a',      // Rosa fuerte
+                '#af4',      // Verde lima
+                '#ff6b35',   // Naranja
+                '#8a2be2',   // Violeta
+                '#ffd700',   // Amarillo dorado
+                '#00ced1',   // Turquesa
+                '#ff1493',   // Rosa intenso
+                '#7cfc00',   // Verde hierba
+                '#ff4500',    // Rojo anaranjado
+                '#6a5acd',   // Slate violet
+    '#ff8c00',   // Dark orange
+    '#20b2aa',   // Light sea green
+    '#9acd32',   // Yellow green
+    '#e066ff'    // Lila
+];
+            
+            
+            // 15 imágenes con las rutas actualizadas
+            const imageSources = [
+    'recursos/fotos/1000545423.jpg',
+    'recursos/fotos/1000559179.jpg',
+    'recursos/fotos/1000559192.jpg',
+    'recursos/fotos/1000559195.jpg',
+    'recursos/fotos/1000559199.jpg',
+    'recursos/fotos/1000559202.jpg',
+    'recursos/fotos/1000559205.jpg',
+    'recursos/fotos/1000559208.jpg',
+    'recursos/fotos/1000559211.jpg',
+    'recursos/fotos/1000559214.jpg',
+    'recursos/fotos/1000559217.jpg',
+    'recursos/fotos/1000559220.jpg',
+    'recursos/fotos/1000559223.jpg',
+    'recursos/fotos/1000559226.jpg',
+    'recursos/fotos/1000559229.jpg',
+    'recursos/fotos/1000559232.jpg',
+    'recursos/fotos/1000559235.jpg',
+    'recursos/fotos/1000559447.jpg',
+    'recursos/fotos/1000559448.jpg',
+    'recursos/fotos/1000559451.jpg',
+    'recursos/fotos/1000559453.jpg',
+    'recursos/fotos/1000559455.jpg',
+    'recursos/fotos/1000559459.jpg',
+    'recursos/fotos/1000559465.jpg',
+    'recursos/fotos/1000559468.jpg',
+    'recursos/fotos/1000559471.jpg',
+    'recursos/fotos/1000559709.jpg',
+    'recursos/fotos/agentessanitarios1.jpg',
+    'recursos/fotos/agentessanitarios2.jpg',
+    'recursos/fotos/agentessanitarios3.jpg',
+    'recursos/fotos/agentessanitarios4.jpg',
+    'recursos/fotos/anotando.jpg',
+    'recursos/fotos/chiquitacomiendolentejas.jpg',
+    'recursos/fotos/chiquitocomiendo.jpg',
+    'recursos/fotos/comedor.jpg',
+    'recursos/fotos/comedor2.jpg',
+    'recursos/fotos/comedorlleno.jpg',
+    'recursos/fotos/comedorlleno2.jpg',
+    'recursos/fotos/fila.jpg',
+    'recursos/fotos/lentejas.jpg',
+    'recursos/fotos/lilianasigler.jpg',
+    'recursos/fotos/mesaalairelibre.jpg',
+    'recursos/fotos/mesadeinterior.jpg',
+    'recursos/fotos/mesadetrabajo.jpg',
+    'recursos/fotos/midiendounchiquito.jpg'
+];
+            // Archivos de audio - DEJA AQUÍ LAS RUTAS DE TUS ARCHIVOS DE AUDIO
+            const audioSources = [
+    'recursos/canciones/1.mp3',
+    'recursos/canciones/2.mp3',
+    'recursos/canciones/3.mp3',
+    'recursos/canciones/a-piano-a4-422104.mp3',
+    'recursos/canciones/a-piano-a4-422105.mp3',
+    'recursos/canciones/b-piano-b4-422106.mp3',
+    'recursos/canciones/bottle-clink-101000.mp3',
+    'recursos/canciones/c-422088.mp3',
+    'recursos/canciones/c-piano-c4-422089.mp3',
+    'recursos/canciones/chime-sound-7143.mp3',
+    'recursos/canciones/cinematic-piano-note-362716.mp3',
+    'recursos/canciones/d-piano-d4-422090.mp3',
+    'recursos/canciones/d-piano-d4-422091.mp3',
+    'recursos/canciones/diamond-found-190255.mp3',
+    'recursos/canciones/do-80236.mp3',
+    'recursos/canciones/e-piano-e4-422092.mp3',
+    'recursos/canciones/f-piano-f4-422093.mp3',
+    'recursos/canciones/f-piano-f4-422101.mp3',
+    'recursos/canciones/flauta-de-armonicos-69763.mp3',
+    'recursos/canciones/flute-rain-flute-loop-ambient-short-loop-340800.mp3',
+    'recursos/canciones/g-piano-g4-422102.mp3',
+    'recursos/canciones/g-piano-g4-422103.mp3',
+    'recursos/canciones/glass-bottle-clink-90671.mp3',
+    'recursos/canciones/high-c-piano-c5-422108.mp3',
+    'recursos/canciones/indian-flute-music-soothing-312941.mp3',
+    'recursos/canciones/middle-c-piano-c4-422087.mp3',
+    'recursos/canciones/panflute_j008b-77898.mp3',
+    'recursos/canciones/pause-piano-sound-40579.mp3',
+    'recursos/canciones/piano-g-6200.mp3',
+    'recursos/canciones/piano-plinks-84919.mp3',
+    'recursos/canciones/scale-a6-106130.mp3',
+    'recursos/canciones/scale-c6-106131.mp3',
+    'recursos/canciones/scale-c7-106132.mp3',
+    'recursos/canciones/scale-d6-106129.mp3',
+    'recursos/canciones/scale-e6-14577.mp3',
+    'recursos/canciones/scale-f6-106128.mp3',
+    'recursos/canciones/scale-g6-89174.mp3',
+    'recursos/canciones/scale-h6-89173.mp3',
+    'recursos/canciones/windchime1-7065.mp3',
+    'recursos/canciones/wine-glass-clink-36035.mp3',
+    'recursos/canciones/wine-glass-clink-36036.mp3',
+    'recursos/canciones/wine-glass-clink-deeper-106012.mp3',
+    'recursos/canciones/violin-improv-73437.mp3',
+    'recursos/canciones/strings-263707.mp3',
+    'recursos/canciones/in-palatio-grandiose-transition-piece-246858.mp3'
+];
+            const bases = [
+    'recursos/bases/bombo.mp3',
+    'recursos/bases/caja.mp3',
+    'recursos/bases/campo 2.mp3',
+    'recursos/bases/campo arg.mp3',
+    'recursos/bases/monte.mp3',
+    'recursos/bases/payada.mp3',
+    'recursos/bases/violin.mp3'
+];
+            // Función para obtener un color aleatorio de la lista
+            function getRandomColor() {
+                return colors[Math.floor(Math.random() * colors.length)];
+            }
+            
+            // Función para obtener una imagen aleatoria
+            function getRandomImage() {
+                return imageSources[Math.floor(Math.random() * imageSources.length)];
+            }
+            
+            // Función para obtener un audio aleatorio
+            function getRandomAudio() {
+                if (audioSources.length === 0) return null;
+                return audioSources[Math.floor(Math.random() * audioSources.length)];
+            }
+            
+            // Función para reproducir un audio aleatorio
+            function playRandomAudio() {
+                const audioFile = getRandomAudio();
+                if (!audioFile) return;
+                
+                try {
+                    const audio = new Audio(audioFile);
+                    audio.volume = 1; // Volumen al 70%
+                    audio.play().catch(e => {
+                        console.error('Error al reproducir audio:', e);
+                    });
+                } catch (error) {
+                    console.error('Error al crear objeto Audio:', error);
+                }
+            }
+            
+            // Función para mostrar una imagen aleatoria
+            function showRandomImage() {
+                if (isImageActive) return; // Evitar superposición
+                
+                isImageActive = true;
+                
+                // Crear contenedor para centrar la imagen
+                const container = document.createElement('div');
+                container.className = 'mystery-image-container';
+                
+                // Crear la imagen
+                const img = document.createElement('img');
+                img.className = 'mystery-image';
+                img.src = getRandomImage();
+                img.alt = '';
+                
+                // Asegurarnos de que la imagen mantenga sus proporciones
+                img.onload = function() {
+                };
+                
+                // Manejar errores de carga
+                img.onerror = function() {
+                    console.error('Error al cargar la imagen:', img.src);
+                    // Si hay error, remover todo después de un breve tiempo
+                    setTimeout(() => {
+                        if (container.parentNode) {
+                            container.remove();
+                        }
+                        isImageActive = false;
+                    }, 1000);
+                };
+                
+                container.appendChild(img);
+                document.body.appendChild(container);
+                
+                // Eliminar todo después de 7 segundos
+                setTimeout(() => {
+                    if (container.parentNode) {
+                        container.remove();
+                    }
+                    isImageActive = false;
+                }, 7000);
+            }
+            
+            // Función para verificar si se activa el evento especial
+            function checkSpecialEvent() {
+                
+                probability += 0.55;
+                
+                // Verificar si se activa el evento (probabilidad entre 0 y 100)
+                const randomValue = 7 + Math.random() * 93;
+                
+                console.log(`Clics: ${clickCount}, Probabilidad: ${probability.toFixed(2)}%, Valor aleatorio: ${randomValue.toFixed(2)}`);
+                
+                if (randomValue <= probability) {
+                    // ¡Evento activado!
+                    console.log('¡Evento especial activado!');
+                    showRandomImage();
+                    
+                    // Reiniciar contadores
+                    clickCount = 0;
+                    probability = 0;
+                    
+                    return true;
+                }
+                
+                return false;
+            }
+            
+            document.body.addEventListener('click', function(e) {
+                // Si hay una imagen activa, no hacer nada
+                if (isImageActive) return;
+                
+                // Incrementar contador de clics
+                clickCount++;
+                
+                // Reproducir un audio aleatorio con cada clic
+                playRandomAudio();
+                
+                // Verificar si se activa el evento especial
+                const eventTriggered = checkSpecialEvent();
+                
+                // Si se activó el evento, no crear ondas esta vez
+                if (eventTriggered) return;
+                
+                // Seleccionar un color aleatorio para este clic
+                const randomColor = getRandomColor();
+                
+                // Crear el punto central con el color aleatorio
+                const point = document.createElement('div');
+                point.className = 'center-point';
+                point.style.left = e.clientX + 'px';
+                point.style.top = e.clientY + 'px';
+                point.style.backgroundColor = randomColor;
+                point.style.color = randomColor; // Para la sombra
+                
+                waveContainer.appendChild(point);
+                
+                // Crear ondas concéntricas con el mismo color
+                const waveCount = 5;
+                const delay = 200; // milisegundos entre cada onda
+                
+                for (let i = 0; i < waveCount; i++) {
+                    setTimeout(() => {
+                        createWave(e.clientX, e.clientY, i, randomColor);
+                    }, i * delay);
+                }
+                
+                // Eliminar el punto central después de un tiempo
+                setTimeout(() => {
+                    point.remove();
+                }, waveCount * delay + 1000);
+            });
+            
+            function createWave(x, y, index, color) {
+                const wave = document.createElement('div');
+                wave.className = 'wave';
+                wave.style.left = x + 'px';
+                wave.style.top = y + 'px';
+                wave.style.borderColor = color;
+                
+                // Ajustar la opacidad según el índice para crear efecto de desvanecimiento
+                const opacity = 0.8 - (index * 0.15);
+                wave.style.opacity = opacity;
+                
+                // Variar ligeramente el tamaño de cada onda
+                const sizeMultiplier = 1 + (index * 0.15);
+                wave.style.setProperty('--size-multiplier', sizeMultiplier);
+                
+                waveContainer.appendChild(wave);
+                
+                // Eliminar la onda después de la animación
+                setTimeout(() => {
+                    if (wave.parentNode === waveContainer) {
+                        wave.remove();
+                    }
+                }, 2000);
+            }
+            
+            // Instrucción temporal que desaparece
+            const instructions = document.createElement('div');
+            instructions.innerHTML = 'Haz clic en cualquier lugar o pulsa espacio';
+            instructions.style.position = 'fixed';
+            instructions.style.top = '50%';
+            instructions.style.left = '50%';
+            instructions.style.transform = 'translate(-50%, -50%)';
+            instructions.style.color = '#888';
+            instructions.style.fontFamily = 'monospace';
+            instructions.style.fontSize = '16px';
+            instructions.style.opacity = '0.7';
+            instructions.style.pointerEvents = 'none';
+            instructions.style.zIndex = '100';
+            instructions.style.animation = 'fadeOut 3s forwards 2s';
+            instructions.style.textAlign = 'center';
+            instructions.style.textShadow = '0 0 5px #000';
+            
+            // Añadir animación de desvanecimiento
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes fadeOut {
+                    from { opacity: 0.7; }
+                    to { opacity: 0; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            document.body.appendChild(instructions);
+            
+            // Eliminar las instrucciones después de que se desvanecen
+            setTimeout(() => {
+                instructions.remove();
+                style.remove();
+            }, 5000);
+            
+            // Permitir interacción con teclado (opcional) - solo si no hay imagen activa
+            document.addEventListener('keydown', function(e) {
+                if (e.code === 'Space' && !isImageActive) {
+                    // Crear ondas en posición aleatoria al presionar espacio
+                    const randomX = Math.random() * window.innerWidth;
+                    const randomY = Math.random() * window.innerHeight;
+                    
+                    const event = new MouseEvent('click', {
+                        clientX: randomX,
+                        clientY: randomY
+                    });
+                    
+                    document.body.dispatchEvent(event);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
